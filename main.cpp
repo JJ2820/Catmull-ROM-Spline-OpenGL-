@@ -9,26 +9,27 @@
 #include <sstream>
 #include <cmath>
 
+// Use GLM's vec2 for points
+using glm::vec2;
+
 // Control points for the spline
-std::vector<glm::vec2> controlPoints = {
-    glm::vec2(0.0f, 0.0f), // Control Point 1
-    glm::vec2(1.0f, 1.0f), // Control Point 2
-    glm::vec2(2.0f, 3.0f), // Control Point 3
-    glm::vec2(5.0f, 1.0f), // Control Point 4
-    glm::vec2(7.0f, 8.0f)  // Control Point 5
+std::vector<vec2> controlPoints = {
+    vec2(0.0f, 0.0f), // Control Point 1
+    vec2(1.0f, 1.0f), // Control Point 2
+    vec2(2.0f, 3.0f), // Control Point 3
+    vec2(5.0f, 1.0f), // Control Point 4
+    vec2(7.0f, 8.0f)  // Control Point 5
 };
 
 // Stroke width for the outline
 float strokeWidth = 0.05f;
 
-// Interpolation function for Catmull-Rom spline
-glm::vec2 interpolateCatmullRom(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, float t) {
+// Catmull-Rom spline interpolation using GLM vectors
+vec2 interpolateCatmullRom(const vec2& p0, const vec2& p1, const vec2& p2, const vec2& p3, float t) {
     float t2 = t * t;
     float t3 = t2 * t;
 
-    return 0.5f * ((2.0f * p1) +
-                   (-p0 + p2) * t +
-                   (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t2 +
+    return 0.5f * ((2.0f * p1) + (-p0 + p2) * t + (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t2 +
                    (-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t3);
 }
 
@@ -64,12 +65,21 @@ GLuint initShaders() {
     GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexCode.c_str());
     GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentCode.c_str());
 
+    // Create shader program and link shaders
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
 
-    // Cleanup shaders
+    GLint success;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cerr << "Error: Shader Program Linking Failed\n" << infoLog << std::endl;
+    }
+
+    // Cleanup shaders (they are now linked into the program and can be deleted)
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
@@ -83,13 +93,13 @@ std::vector<float> generateSplineVertices() {
     if (controlPoints.size() < 4) return vertices;
 
     for (size_t i = 1; i < controlPoints.size() - 2; ++i) {
-        const glm::vec2& p0 = controlPoints[i - 1];
-        const glm::vec2& p1 = controlPoints[i];
-        const glm::vec2& p2 = controlPoints[i + 1];
-        const glm::vec2& p3 = controlPoints[i + 2];
+        const vec2& p0 = controlPoints[i - 1];
+        const vec2& p1 = controlPoints[i];
+        const vec2& p2 = controlPoints[i + 1];
+        const vec2& p3 = controlPoints[i + 2];
 
         for (float t = 0; t <= 1.0f; t += 0.01f) {
-            glm::vec2 interpolatedPoint = interpolateCatmullRom(p0, p1, p2, p3, t);
+            vec2 interpolatedPoint = interpolateCatmullRom(p0, p1, p2, p3, t);
             vertices.push_back(interpolatedPoint.x);
             vertices.push_back(interpolatedPoint.y);
         }
@@ -207,7 +217,7 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, strokeVertices.size() / 2);
         glBindVertexArray(0);
 
-        // Optionally draw spline for reference
+        // Draw spline for reference (optional)
         glBindVertexArray(splineVAO);
         glDrawArrays(GL_LINE_STRIP, 0, splineVertices.size() / 2);
         glBindVertexArray(0);
