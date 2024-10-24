@@ -23,3 +23,9 @@ Polyline2D - https://github.com/CrushedPixel/Polyline2D.git
 ![image](https://github.com/user-attachments/assets/f0123372-f226-475b-b4e5-b134c885d324)
 
 You will get the following output with coordinates  [(0, 0), (1, 1), (2, 3), (5, 1), (7, 8)]
+Where tention used in Catmul-Rom matrix is 0.7  {#define T 0.7}  
+
+const mat4 CRM = mat4(-T,        2.0 - T,  T - 2.0,         T,
+                       2.0 * T,  T - 3.0,  3.0 - 2.0 * T,  -T,
+                      -T,        0.0,      T,               0.0,
+                       0.0,      1.0,      0.0,             0.0);
